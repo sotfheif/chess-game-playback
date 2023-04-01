@@ -1,0 +1,7 @@
+1. e2—e4 a7—a5
+2. e4—e5 d7—d5
+3. e5xd6 a5—a4
+4. b2—b4 a4xb3
+5. Bf1—c4 Nb8—c6
+6. Qd1—h5 Ng8—f6
+7. Ng1—f3 h7—h6

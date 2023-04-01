@@ -1,0 +1,410 @@
+<html>
+<head>
+</head>
+<body>
+<table id = 'table' style="position: relative" width='700px' height='630px'>
+<script>
+var obj1, obj2; // чтобы было меньше текста в написании функций для перемещения фигур
+var i, j, c, l; // счётчики
+var u; // поможет убрать ненужные номера пар ходов в шахматной нотации
+var rok=false; // индикатор рокировки
+var nofm; // количество ходов партии
+var minusfiguri=[]; // массив названий съеденных фигур
+var ptox=[]; // массив превращениий пешек
+var nh=0; // номер текущего хода минус 1
+var kartinki = ["bB", "bK", "bN", "bP", "bQ", "bR", "wB", "wK", "wN", "wP", "wQ", "wR"]; // массив названий фигур с указанием их цвета
+var cfrom, cto; // откуда и куда переместилась фигура
+
+function lton(letter){ // преобразует букву в её номер в алфавите. 
+return letter.charCodeAt()+1-"a".charCodeAt();
+}
+ function splice(st, index, count, add){ // заменяет подстроку в строке
+ return st.slice(0, index)+add+st.slice(index+count);
+ }
+var b=['a','b','c','d','e','f','g','h'];
+var f=['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']; // массив названий фигур
+for (i=0; i<kartinki.length;i++) // добавим невидимые образцы картинок всех фигур
+{
+document.write("<div"+" id='"+kartinki[i]+"d'>");
+document.write("<img id='"+kartinki[i]+"i'"+" src='"+kartinki[i]+".png'"+"width='68px' height='68px'"+"style='display: none'"+">");
+document.write("</div>");
+}
+// построим таблицу
+for (i=0; i<9; i++)
+{
+document.write('<tr>');
+for (j=0; j<9; j++)
+{
+if (i==0){
+document.write('<th width="70px" height="70px">');
+if (j!=0){
+document.write(String.fromCharCode('a'.charCodeAt(0)+j-1));
+}
+document.write('</th>');
+}
+else
+if (j==0){
+document.write('<th width="70px" height="70px">');
+if (i!=0)
+document.write(i);
+document.write('</th>');
+}
+else{
+if ((i>0)&&(j>0)&&((i+j)%2==0)) // закрасим часть клеток, чтобы получилась шахматная доска
+document.write('<td width="70px" height="70px" style="background-color: brown">'); 
+else
+document.write('<td width="70px" height="70px">');
+document.write('<div'+' style="position: relative"'+' id="'+i+''+j+'d">'+'</div>');
+document.write('</td>');
+}
+}
+document.write('</tr>')
+}
+//расставляем фигуры, копируя картинки-образцы и делая их видимыми
+for (i=1; i<9; i++)
+for (j=1; j<9; j++){
+if (i==1){
+document.getElementById(i+''+j+'d').appendChild(document.getElementById('w'+f[j-1]+'i').cloneNode(true));
+document.getElementById(i+''+j+'d').children[0].style.display="initial";
+}
+if (i==2)
+{
+document.getElementById(i+''+j+'d').appendChild(document.getElementById('wPi').cloneNode(true));
+document.getElementById(i+''+j+'d').children[0].style.display="initial";
+}
+if (i==7)
+{
+document.getElementById(i+''+j+'d').appendChild(document.getElementById('bPi').cloneNode(true));
+document.getElementById(i+''+j+'d').children[0].style.display="initial";
+}
+if (i==8)
+{
+document.getElementById(i+''+j+'d').appendChild(document.getElementById('b'+f[j-1]+'i').cloneNode(true));
+document.getElementById(i+''+j+'d').children[0].style.display="initial";
+}
+}
+
+</script>
+</table>
+<input type= "button" id="nm" value = "следующий ход">
+<input type= "button" id="pm" value = "предыдущий ход">
+<input type= "button" id="res" value = "сброс">
+<input type="file" id="myfile" onchange="readfile(this.files)"> <!-- кнопка для считывания  шахматной нотации из файла -->
+
+<script>
+            var tfile;
+            var reader = new FileReader();
+            function readfile(files) // функция, считывающая ходы из текстового файла
+            {
+                tfile = files[0];
+                reader.readAsText(tfile, "UTF-8");
+                reader.onload = function(e)
+                {            
+                    str = e.target.result;
+					i = 0;
+					u = 0;
+					//добавим обозначение пешки в записи ходов пешек
+					while(i<str.length){
+					if (str[i]==" ")
+					 for (l=0; l<b.length; l++)
+					 if (str[i+1]==b[l])
+					 str=splice(str, i+1, 0, "P")
+					 i++;
+					 }
+					 i=0;
+					while(i<str.length) {
+					// убираем номера пар ходов с точками
+					if (str[i]==".") {
+					u++;
+				    if(u>=100){
+					i=i-3;
+					str=splice(str, i, 5, "");
+					}
+					else
+					if (u>=10){
+					i=i-2;
+					str=splice(str, i, 4, "");
+					}
+					else
+					str=splice(str, --i, 3, "");
+					}
+					//убираем другие ненужные символы
+					if (str[i]=="\n")
+					str=splice(str, --i, 2, " ")
+					if ((str[i]=="?")||(str[i]=="!")||(str[i]=="+")||(str[i]=="?")||(str[i]=="#"))
+					str=splice(str, i--, 1, "");
+                 	if (str[i]=="x")
+					str=splice(str, i--, 1, "—"); 
+					if (str[i]=="-")
+					str=splice(str, i--, 1, "—"); 
+					i++;
+					}
+					str=str.split(" ");	// создаём массив ходов
+					nofm=str.length; // сохраняем количество ходов в партии
+					for (i=0; i<nofm; i++){
+					ptox[i]=""; // приравниваем длину массива к количеству ходов в партии
+					minusfiguri[i]=""; // приравниваем длину массива к количеству ходов в партии	
+					}
+					i=0;
+					// записываем названия (вырезая их из массива ходов) и цвет фигур, в которых превращались пешки, в массив под номером хода -1
+					for (i=0; i<nofm; i++)
+					for (j=0; j<f.length; j++) 
+					if (str[i].slice(str[i].length-1)==f[j]){
+					if (i%2==0)
+					ptox[i]="w"+str[i].slice(str[i].length-1);
+					else 
+					ptox[i]="b"+str[i].slice(str[i].length-1);
+					str[i]=splice(str[i], str[i].length-1, 1, "");
+					break;
+					}
+					i=0;
+					j=0;
+                };
+            }
+var btnnm = document.getElementById("nm");
+btnnm.addEventListener('click', mnm);
+function mnm(){ // функция, которую вызовет кнопка "следующий ход"
+if (nh>nofm-1) // не даём номеру текущего хода, стать больше, чем количество ходов в партии
+return;
+rok=false; // обнуляем индикатор рокировки
+//проверка, превращается ли пешка во что-нибудь в текущий ход, соответствующая обработка
+if (ptox[nh]!="")
+{
+document.getElementById(str[nh].slice(2,3)+lton(str[nh].slice(1,2))+"d").removeChild(document.getElementById(str[nh].slice(2,3)+lton(str[nh].slice(1,2))+"d").children[0]);
+document.getElementById(str[nh].slice(5)+lton(str[nh].slice(4,5))+"d").appendChild(document.getElementById(ptox[nh]+"i").cloneNode(true));
+document.getElementById(str[nh].slice(5)+lton(str[nh].slice(4,5))+"d").children[0].style.display="initial";
+nh++;
+return;
+}
+//дальше идёт проверка, является ли текущий ход взятием на проходе, если да, то это рассматривается отдельно
+// проверка в несколько этапов, чтобы не проверять все условия для каждого хода
+if (str[nh].slice(0,1)=="P"){
+if (str[nh].slice(5)=="6")
+{
+if (str[nh-1]=="P"+str[nh].slice(4, 5)+"7—"+str[nh].slice(4,5)+"5")
+{
+obj2=document.getElementById(str[nh-1].slice(5)+lton(str[nh-1].slice(4,5))+"d");
+document.getElementById(str[nh].slice(5)+lton(str[nh].slice(4,5))+"d").appendChild(document.getElementById(str[nh].slice(2,3)+lton(str[nh].slice(1,2))+"d").children[0]);
+minusfiguri[nh]=obj2.children[0].outerHTML.slice(obj2.children[0].outerHTML.indexOf(".")-2, obj2.children[0].outerHTML.indexOf("."));
+obj2.removeChild(obj2.children[0]);
+nh++;
+return;
+}
+}
+if (str[nh].slice(5)=="3")
+{
+if (str[nh-1]=="P"+str[nh].slice(4, 5)+"2—"+str[nh].slice(4,5)+"4")
+{
+obj2=document.getElementById(str[nh-1].slice(5)+lton(str[nh-1].slice(4,5))+"d");
+document.getElementById(str[nh].slice(5)+lton(str[nh].slice(4,5))+"d").appendChild(document.getElementById(str[nh].slice(2,3)+lton(str[nh].slice(1,2))+"d").children[0]);
+minusfiguri[nh]=obj2.children[0].outerHTML.slice(obj2.children[0].outerHTML.indexOf(".")-2, obj2.children[0].outerHTML.indexOf("."));
+obj2.removeChild(obj2.children[0]);
+nh++;
+return;
+}
+}
+}
+//проверка, является ли ход рокировкой, и соответствующая обработка
+switch (str[nh])
+{
+
+case '0—0':
+if (nh%2==0)
+{
+document.getElementById("17d").appendChild(document.getElementById("15d").children[0]);
+document.getElementById("16d").appendChild(document.getElementById("18d").children[0]);
+}
+else 
+{
+document.getElementById("87d").appendChild(document.getElementById("85d").children[0]);
+document.getElementById("86d").appendChild(document.getElementById("88d").children[0]);
+}
+nh++;
+rok=true;
+break;
+
+case '0—0—0':
+if (nh%2==0)
+{
+document.getElementById("13d").appendChild(document.getElementById("15d").children[0]);
+document.getElementById("14d").appendChild(document.getElementById("11d").children[0]);
+}
+else 
+{
+document.getElementById("83d").appendChild(document.getElementById("85d").children[0]);
+document.getElementById("84d").appendChild(document.getElementById("81d").children[0]);
+}
+nh++;
+rok=true;
+break;
+
+default:
+break;
+}
+if (rok==true)
+return;
+// все остальные ходы рассматриваются по общему шаблону
+cfrom=str[nh].slice(1, str[nh].indexOf("—")); // откуда переместилась фигура
+cto=str[nh].slice(str[nh].indexOf("—")+1); // куда переместилась фигура
+// все буквенные символы в этих строках преобразуются в удобные для использования числовые аналоги
+for (c=0; c<cfrom.length; c++)
+for (l=0; l<b.length; l++)
+if (cfrom[c]==b[l]){
+cfrom=splice(cfrom, c, 1, l+1);
+break;
+}
+for (c=0; c<cto.length; c++)
+for (l=0; l<b.length; l++)
+if (cto[c]==b[l]){
+cto=splice(cto, c, 1, l+1);
+break;
+}
+// само перемещение фигуры
+obj1=document.getElementById(cfrom[1]+cfrom[0]+'d');
+obj2=document.getElementById(cto[1]+cto[0]+'d');
+if (obj2.children[0]+""!="undefined") //если кого-то съели, название съеденной фигуры записывается в специально созданный массив
+{
+minusfiguri[nh]=obj2.children[0].outerHTML.slice(obj2.children[0].outerHTML.indexOf(".")-2, obj2.children[0].outerHTML.indexOf("."));
+obj2.removeChild(obj2.children[0]);
+} 
+obj2.appendChild(obj1.children[0]);
+nh++;
+}
+
+var btnpm = document.getElementById("pm"); 
+btnpm.addEventListener('click', mpm);
+
+function mpm(){ // функция, которую вызовет кнопка "предыдущий ход"
+if (nh==0) // не даём номеру хода минус 1 стать отрицательным
+return; 
+nh--;
+rok=false; 
+// проверка, превращается ли пешка во что-нибудь в текущий ход, соответствующая обработка
+if (ptox[nh]!="")
+{
+document.getElementById(str[nh].slice(5)+lton(str[nh].slice(4,5))+"d").removeChild(document.getElementById(str[nh].slice(5)+lton(str[nh].slice(4,5))+"d").children[0]);
+if (nh%2==0)
+document.getElementById(str[nh].slice(2,3)+lton(str[nh].slice(1,2))+"d").appendChild(document.getElementById("wPi").cloneNode(true));
+else
+document.getElementById(str[nh].slice(2,3)+lton(str[nh].slice(1,2))+"d").appendChild(document.getElementById("bPi").cloneNode(true));
+document.getElementById(str[nh].slice(2,3)+lton(str[nh].slice(1,2))+"d").children[0].style.display="initial";
+return;
+}
+// проверки на взятие с проходом и рокировку и соответствующие действия
+if (str[nh].slice(0,1)=="P"){
+if (str[nh].slice(5)=="6")
+{
+if (str[nh-1]=="P"+str[nh].slice(4, 5)+"7—"+str[nh].slice(4,5)+"5"){
+obj2=document.getElementById(str[nh-1].slice(5)+lton(str[nh-1].slice(4,5))+"d");
+document.getElementById(str[nh].slice(2,3)+lton(str[nh].slice(1,2))+"d").appendChild(document.getElementById(str[nh].slice(5)+lton(str[nh].slice(4,5))+"d").children[0]);
+obj2.appendChild(document.getElementById(minusfiguri[nh]+"i").cloneNode(true));
+obj2.children[0].style.display="initial";
+return;
+}
+}
+if (str[nh].slice(5)=="3")
+{
+if (str[nh-1]=="P"+str[nh].slice(4, 5)+"2—"+str[nh].slice(4,5)+"4")
+{
+obj2=document.getElementById(str[nh-1].slice(5)+lton(str[nh-1].slice(4,5))+"d");
+document.getElementById(str[nh].slice(2,3)+lton(str[nh].slice(1,2))+"d").appendChild(document.getElementById(str[nh].slice(5)+lton(str[nh].slice(4,5))+"d").children[0]);
+obj2.appendChild(document.getElementById(minusfiguri[nh]+"i").cloneNode(true));
+obj2.children[0].style.display="initial";
+return;
+}
+}
+}
+switch (str[nh])
+{
+
+case '0—0':
+if (nh%2==0)
+{
+document.getElementById("15d").appendChild(document.getElementById("17d").children[0]);
+document.getElementById("18d").appendChild(document.getElementById("16d").children[0]);
+}
+else 
+{
+document.getElementById("85d").appendChild(document.getElementById("87d").children[0]);
+document.getElementById("88d").appendChild(document.getElementById("86d").children[0]);
+}
+rok=true;
+break;
+
+case '0—0—0':
+if (nh%2==0)
+{
+document.getElementById("15d").appendChild(document.getElementById("13d").children[0]);
+document.getElementById("11d").appendChild(document.getElementById("14d").children[0]);
+}
+else 
+{
+document.getElementById("85d").appendChild(document.getElementById("83d").children[0]);
+document.getElementById("81d").appendChild(document.getElementById("84d").children[0]);
+}
+rok=true;
+break;
+
+default:
+break;
+}
+if (rok==true)
+return;
+// в общем случае все ходы выполняются в обратную сторону. 
+// при этом, если под номером хода в массиве съеденных фигур записана фигура, она копируется из образца на нужную клетку
+cfrom=str[nh].slice(1, str[nh].indexOf("—"));
+cto=str[nh].slice(str[nh].indexOf("—")+1);
+for (c=0; c<cfrom.length; c++)
+for (l=0; l<b.length; l++)
+if (cfrom[c]==b[l]){
+cfrom=splice(cfrom, c, 1, l+1);
+break;
+}
+for (c=0; c<cto.length; c++)
+for (l=0; l<b.length; l++)
+if (cto[c]==b[l]){
+cto=splice(cto, c, 1, l+1);
+break;
+}
+var obj1=document.getElementById(cfrom[1]+cfrom[0]+'d');
+var obj2=document.getElementById(cto[1]+cto[0]+'d');
+obj1.appendChild(obj2.children[0]);
+if (minusfiguri[nh]!="")
+{
+obj2.appendChild(document.getElementById(minusfiguri[nh]+"i").cloneNode(true));
+obj2.children[0].style.display="initial";
+}
+}
+var dores = document.getElementById("res");
+dores.addEventListener('click', reset);
+function reset(){ // функция для кнопки "сброс"
+nh=0;
+// удаление всех картинок на шаматном поле и построение фигур, как в начале программы
+for (i=1; i<9; i++)
+for (j=1; j<9; j++){
+if (document.getElementById(i+''+j+'d').children[0]=='[object HTMLImageElement]')
+document.getElementById(i+''+j+'d').removeChild(document.getElementById(i+''+j+'d').children[0]);
+if (i==1){
+document.getElementById(i+''+j+'d').appendChild(document.getElementById('w'+f[j-1]+'i').cloneNode(true));
+document.getElementById(i+''+j+'d').children[0].style.display="initial";
+}
+if (i==2)
+{
+document.getElementById(i+''+j+'d').appendChild(document.getElementById('wPi').cloneNode(true));
+document.getElementById(i+''+j+'d').children[0].style.display="initial";
+}
+if (i==7)
+{
+document.getElementById(i+''+j+'d').appendChild(document.getElementById('bPi').cloneNode(true));
+document.getElementById(i+''+j+'d').children[0].style.display="initial";
+}
+if (i==8)
+{
+document.getElementById(i+''+j+'d').appendChild(document.getElementById('b'+f[j-1]+'i').cloneNode(true));
+document.getElementById(i+''+j+'d').children[0].style.display="initial";
+}
+}
+}
+</script>
+</body>
+</html>
